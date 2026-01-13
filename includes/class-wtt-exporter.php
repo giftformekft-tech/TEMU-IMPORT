@@ -102,6 +102,10 @@ class WTT_Exporter {
         return strval(random_int(10000, 99999));
     }
 
+    private function rand6() {
+        return strval(random_int(100000, 999999));
+    }
+
     private function make_sku($base, &$seen) {
         $base = trim((string)$base);
         if ($base === '') $base = 'SKU';
@@ -111,6 +115,19 @@ class WTT_Exporter {
             if (!isset($seen[$sku])) { $seen[$sku]=true; return $sku; }
         }
         // last resort
+        $sku = $base . '-' . time();
+        if (!isset($seen[$sku])) { $seen[$sku]=true; return $sku; }
+        return $base . '-' . uniqid();
+    }
+
+    private function make_product_sku($name, &$seen) {
+        $base = sanitize_title($name);
+        if ($base === '') $base = 'termek';
+
+        for ($i=0; $i<20; $i++) {
+            $sku = $base . '-' . $this->rand6();
+            if (!isset($seen[$sku])) { $seen[$sku]=true; return $sku; }
+        }
         $sku = $base . '-' . time();
         if (!isset($seen[$sku])) { $seen[$sku]=true; return $sku; }
         return $base . '-' . uniqid();
@@ -128,6 +145,7 @@ class WTT_Exporter {
         $rows = [];
         $warnings = [];
         $seen_skus = [];
+        $seen_product_skus = [];
 
         foreach ($product_ids as $pid) {
             $p = wc_get_product($pid);
@@ -142,6 +160,7 @@ class WTT_Exporter {
             $desc = wp_strip_all_tags(($this->settings['desc_source'] ?? 'short') === 'long' ? $p->get_description() : $p->get_short_description());
             $desc = trim(preg_replace('/\s+/', ' ', $desc));
             $cat_tag_desc = $this->build_cat_tag_desc($p);
+            $product_sku = $this->make_product_sku($parent_name, $seen_product_skus);
 
             foreach ($p->get_children() as $vid) {
                 $v = wc_get_product($vid);
@@ -171,6 +190,7 @@ class WTT_Exporter {
 
                 $rows[] = [
                     'termek_nev' => $parent_name,
+                    'termek_sku' => $product_sku,
                     'sku' => $sku,
                     'leiras' => $desc,
                     'kat_tag_leiras' => $cat_tag_desc,
@@ -227,12 +247,13 @@ class WTT_Exporter {
         // UTF-8 BOM for Excel
         fwrite($fh, "\xEF\xBB\xBF");
 
-        $header = ['Terméknév','SKU','Leírás','Kategóriák+Tagek+Leírás','Méret','Szín','Variáns kép URL'];
+        $header = ['Terméknév','Termék SKU','SKU','Leírás','Kategóriák+Tagek+Leírás','Méret','Szín','Variáns kép URL'];
         fputcsv($fh, $header, ';');
 
         foreach ($rows as $r) {
             fputcsv($fh, [
                 $r['termek_nev'] ?? '',
+                $r['termek_sku'] ?? '',
                 $r['sku'] ?? '',
                 $r['leiras'] ?? '',
                 $r['kat_tag_leiras'] ?? '',
