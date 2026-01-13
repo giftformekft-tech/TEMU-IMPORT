@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Woo to Temu Exporter (POD)
  * Description: Admin felület kijelölt WooCommerce termékek variánsainak Temu import táblázat (CSV) generálásához.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: ChatGPT
  * Requires Plugins: woocommerce
  */
@@ -10,7 +10,7 @@
 if (!defined('ABSPATH')) { exit; }
 
 final class WTT_Exporter_Plugin {
-    public const VERSION = '1.0.2';
+    public const VERSION = '1.0.3';
     public const OPT_KEY = 'wtt_settings_v1';
     public const REST_NS = 'woo-to-temu/v1';
 
